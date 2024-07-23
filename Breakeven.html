@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bus Trip Breakeven Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 8px; }
+    .results { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bus Trip Breakeven Calculator</h1>
+    <div class="form-group">
+      <label for="mg">Minimum Guarantee ($/mile):</label>
+      <input type="number" id="mg" step="0.01" required>
+    </div>
+    <div class="form-group">
+      <label for="totalMiles">Total Miles per Trip:</label>
+      <input type="number" id="totalMiles" required>
+    </div>
+    <div class="form-group">
+      <label for="productionCost">Production Cost ($/mile):</label>
+      <input type="number" id="productionCost" step="0.01" required>
+    </div>
+    <div class="form-group">
+      <label for="ticketPrice">Average Ticket Price ($):</label>
+      <input type="number" id="ticketPrice" step="0.01" required>
+    </div>
+    <div class="form-group">
+      <label for="totalPassengers">Total Passengers the Bus Can Carry:</label>
+      <input type="number" id="totalPassengers" required>
+    </div>
+    <button onclick="calculate()">Calculate</button>
+    <div class="results" id="results"></div>
+  </div>
+  <script>
+    function calculate() {
+      const mg = parseFloat(document.getElementById('mg').value);
+      const totalMiles = parseFloat(document.getElementById('totalMiles').value);
+      const productionCost = parseFloat(document.getElementById('productionCost').value);
+      const ticketPrice = parseFloat(document.getElementById('ticketPrice').value);
+      const totalPassengers = parseInt(document.getElementById('totalPassengers').value);
+
+      const costPerTrip = totalMiles * productionCost;
+      const guaranteePerTrip = totalMiles * mg;
+
+      const requiredPassengersCost = costPerTrip / ticketPrice;
+      const loadFactorCost = (requiredPassengersCost / totalPassengers) * 100;
+
+      const requiredPassengersGuarantee = guaranteePerTrip / ticketPrice;
+      const loadFactorGuarantee = (requiredPassengersGuarantee / totalPassengers) * 100;
+
+      document.getElementById('results').innerHTML = `
+        <h2>Results</h2>
+        <p>To Exceed Production Cost:</p>
+        <p>Required Number of Passengers: ${requiredPassengersCost.toFixed(2)}</p>
+        <p>Load Factor: ${loadFactorCost.toFixed(2)}%</p>
+        <p>To Exceed Guarantee Amount:</p>
+        <p>Required Number of Passengers: ${requiredPassengersGuarantee.toFixed(2)}</p>
+        <p>Load Factor: ${loadFactorGuarantee.toFixed(2)}%</p>
+      `;
+    }
+  </script>
+</body>
+</html>
