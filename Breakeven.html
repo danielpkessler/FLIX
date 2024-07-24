@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bus Trip Breakeven Calculator</title>
+  <title>Revenue Breakeven Calculator</title>
   <style>
     body { font-family: Arial, sans-serif; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -14,35 +14,42 @@
     .explanation { margin-top: 20px; display: none; }
     .hidden { display: none; }
     .button-group { margin-top: 20px; }
-    .header { display: flex; align-items: center; margin-bottom: 20px; }
-    .header img { height: 50px; margin-right: 10px; }
+    img { max-width: 100px; margin-bottom: 20px; vertical-align: middle; }
+    h1 { display: inline-block; margin-left: 10px; vertical-align: middle; }
+    .top-buttons { display: flex; justify-content: center; margin-bottom: 20px; }
+    .top-buttons button { padding: 10px 20px; cursor: pointer; margin: 0 5px; }
+    .active { background-color: #007bff; color: white; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
+    <div>
       <img src="FlixLogo.png" alt="Flix Logo">
       <h1>Bus Trip Breakeven Calculator</h1>
     </div>
-    <div class="form-group">
-      <label for="mg">Minimum Guarantee ($/mile):</label>
-      <input type="number" id="mg" step="0.01">
+    <div class="top-buttons">
+      <button id="usaButton" class="active" onclick="setCountry('USA')">USA</button>
+      <button id="canadaButton" onclick="setCountry('Canada')">Canada</button>
     </div>
     <div class="form-group">
-      <label for="totalMiles">Total Miles per Trip:</label>
-      <input type="number" id="totalMiles">
+      <label for="mg">Minimum Guarantee (<span id="currency">$/mile</span>):</label>
+      <input type="number" id="mg" step="0.01" required>
     </div>
     <div class="form-group">
-      <label for="productionCost">Production Cost ($/mile):</label>
-      <input type="number" id="productionCost" step="0.01">
+      <label for="totalMiles">Total <span id="distanceLabel">Miles</span> per Trip:</label>
+      <input type="number" id="totalMiles" required>
     </div>
     <div class="form-group">
-      <label for="ticketPrice">Average Ticket Price ($):</label>
-      <input type="number" id="ticketPrice" step="0.01">
+      <label for="productionCost">Production Cost (<span id="currency2">$/mile</span>):</label>
+      <input type="number" id="productionCost" step="0.01" required>
+    </div>
+    <div class="form-group">
+      <label for="ticketPrice">Average Ticket Price (<span id="currency3">USD</span>):</label>
+      <input type="number" id="ticketPrice" step="0.01" required>
     </div>
     <div class="form-group">
       <label for="totalPassengers">Total Passengers the Bus Can Carry:</label>
-      <input type="number" id="totalPassengers">
+      <input type="number" id="totalPassengers" required>
     </div>
     <button onclick="calculate()">Calculate</button>
     <button id="clearButton" class="hidden" onclick="clearResults()">Clear</button>
@@ -75,6 +82,23 @@
     </div>
   </div>
   <script>
+    let country = 'USA';
+
+    function setCountry(selectedCountry) {
+      country = selectedCountry;
+      document.getElementById('usaButton').classList.toggle('active', country === 'USA');
+      document.getElementById('canadaButton').classList.toggle('active', country === 'Canada');
+      document.getElementById('currency').innerText = country === 'USA' ? '$/mile' : '$/km';
+      document.getElementById('currency2').innerText = country === 'USA' ? '$/mile' : '$/km';
+      document.getElementById('currency3').innerText = country === 'USA' ? 'USD' : 'CAD';
+      document.getElementById('distanceLabel').innerText = country === 'USA' ? 'Miles' : 'Kilometers';
+      clearResults();
+    }
+
+    function formatNumber(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
     function calculate() {
       const mg = parseFloat(document.getElementById('mg').value);
       const totalMiles = parseFloat(document.getElementById('totalMiles').value);
@@ -82,37 +106,48 @@
       const ticketPrice = parseFloat(document.getElementById('ticketPrice').value);
       const totalPassengers = parseInt(document.getElementById('totalPassengers').value);
 
-      let results = '<h2>Results</h2>';
-
-      if (!isNaN(totalMiles) && !isNaN(productionCost) && !isNaN(ticketPrice) && !isNaN(totalPassengers)) {
-        const costPerTrip = totalMiles * productionCost;
-        const requiredPassengersCost = costPerTrip / ticketPrice;
-        const loadFactorCost = (requiredPassengersCost / totalPassengers) * 100;
-
-        results += `
-          <p><strong>To Exceed Production Cost of ${productionCost.toFixed(2)}$ per mile</strong></p>
-          <p>Required Number of Passengers: ${requiredPassengersCost.toFixed(2)}</p>
-          <p>Load Factor: ${loadFactorCost.toFixed(2)}%</p>
-        `;
+      if (isNaN(mg) || isNaN(totalMiles) || isNaN(productionCost) || isNaN(ticketPrice) || isNaN(totalPassengers)) {
+        document.getElementById('results').innerHTML = '<p style="color:red;">Error: Missing inputs. Please fill out all fields.</p>';
+        return;
       }
 
-      if (!isNaN(totalMiles) && !isNaN(mg) && !isNaN(ticketPrice) && !isNaN(totalPassengers)) {
-        const guaranteePerTrip = totalMiles * mg;
-        const requiredPassengersGuarantee = guaranteePerTrip / ticketPrice;
-        const loadFactorGuarantee = (requiredPassengersGuarantee / totalPassengers) * 100;
+      const costPerTrip = totalMiles * productionCost;
+      const guaranteePerTrip = totalMiles * mg;
 
-        results += `
-          <p><strong>To Exceed Minimum Guarantee of ${mg.toFixed(2)}$ per mile</strong></p>
-          <p>Required Number of Passengers: ${requiredPassengersGuarantee.toFixed(2)}</p>
-          <p>Load Factor: ${loadFactorGuarantee.toFixed(2)}%</p>
-        `;
-      }
+      const requiredPassengersCost = costPerTrip / ticketPrice;
+      const loadFactorCost = (requiredPassengersCost / totalPassengers) * 100;
 
-      if (results === '<h2>Results</h2>') {
-        results = '<p>Please provide valid inputs to perform the calculations.</p>';
-      }
+      const requiredPassengersGuarantee = guaranteePerTrip / ticketPrice;
+      const loadFactorGuarantee = (requiredPassengersGuarantee / totalPassengers) * 100;
 
-      document.getElementById('results').innerHTML = results;
+      // New calculations
+      const thresholdRevenuePerMile = mg / 0.7;
+      const totalMinimumGuarantee = mg * totalMiles;
+      const totalRevenueBeforeSplit = (thresholdRevenuePerMile - mg) * totalMiles;
+      const passengersToBreakeven = (thresholdRevenuePerMile * totalMiles) / ticketPrice;
+      const loadFactorBreakeven = (passengersToBreakeven / totalPassengers) * 100;
+      const totalBreakevenRevenue = totalMinimumGuarantee + totalRevenueBeforeSplit;
+
+      const currencySymbol = country === 'USA' ? '$' : '$';
+      const distanceUnit = country === 'USA' ? 'mile' : 'km';
+
+      document.getElementById('results').innerHTML = `
+        <h2>Results (${country})</h2>
+        <p><strong>To Exceed Production Cost of ${currencySymbol}${productionCost.toFixed(2)} per ${distanceUnit}</strong></p>
+        <p>Required Number of Passengers: ${requiredPassengersCost ? requiredPassengersCost.toFixed(2) : ''}</p>
+        <p>Load Factor: ${loadFactorCost ? loadFactorCost.toFixed(2) : ''}%</p>
+        <p><strong>To Exceed Minimum Guarantee of ${currencySymbol}${mg.toFixed(2)} per ${distanceUnit}</strong></p>
+        <p>Required Number of Passengers: ${requiredPassengersGuarantee ? requiredPassengersGuarantee.toFixed(2) : ''}</p>
+        <p>Load Factor: ${loadFactorGuarantee ? loadFactorGuarantee.toFixed(2) : ''}%</p>
+        <p><strong>To exceed the Breakeven Point of ${currencySymbol}${thresholdRevenuePerMile.toFixed(2)} per ${distanceUnit} (RPM)</strong></p>
+        <p>Required Number of Passengers: ${passengersToBreakeven.toFixed(2)}</p>
+        <p>Load Factor: ${loadFactorBreakeven.toFixed(2)}%</p>
+        <h2>Totals</h2>
+        <p>Total Minimum Guarantee: ${currencySymbol}${formatNumber(totalMinimumGuarantee.toFixed(2))}</p>
+        <p>Revenue Between MG and Split: ${currencySymbol}${formatNumber(totalRevenueBeforeSplit.toFixed(2))}</p>
+        <p>Total Breakeven Revenue: ${currencySymbol}${formatNumber(totalBreakevenRevenue.toFixed(2))}</p>
+      `;
+
       document.getElementById('clearButton').classList.remove('hidden');
     }
 
@@ -124,22 +159,22 @@
       document.getElementById('ticketPrice').value = '';
       document.getElementById('totalPassengers').value = '';
       document.getElementById('clearButton').classList.add('hidden');
-      document.getElementById('explanationButton').classList.remove('hidden');
-      document.getElementById('closeExplanationButton').classList.add('hidden');
-      document.getElementById('explanation').style.display = 'none';
     }
 
     function showExplanation() {
       document.getElementById('explanation').style.display = 'block';
-      document.getElementById('closeExplanationButton').classList.remove('hidden');
       document.getElementById('explanationButton').classList.add('hidden');
+      document.getElementById('closeExplanationButton').classList.remove('hidden');
     }
 
     function hideExplanation() {
       document.getElementById('explanation').style.display = 'none';
-      document.getElementById('closeExplanationButton').classList.add('hidden');
       document.getElementById('explanationButton').classList.remove('hidden');
+      document.getElementById('closeExplanationButton').classList.add('hidden');
     }
+
+    // Set default country to USA
+    setCountry('USA');
   </script>
 </body>
 </html>
