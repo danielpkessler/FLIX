@@ -11,33 +11,68 @@
     label { display: block; margin-bottom: 5px; }
     input { width: 100%; padding: 8px; }
     .results { margin-top: 20px; }
+    .explanation { margin-top: 20px; display: none; }
+    .hidden { display: none; }
+    .button-group { margin-top: 20px; }
+    .header { display: flex; align-items: center; margin-bottom: 20px; }
+    .header img { height: 50px; margin-right: 10px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Bus Trip Breakeven Calculator</h1>
+    <div class="header">
+      <img src="FlixLogo.png" alt="Flix Logo">
+      <h1>Bus Trip Breakeven Calculator</h1>
+    </div>
     <div class="form-group">
       <label for="mg">Minimum Guarantee ($/mile):</label>
-      <input type="number" id="mg" step="0.01" required>
+      <input type="number" id="mg" step="0.01">
     </div>
     <div class="form-group">
       <label for="totalMiles">Total Miles per Trip:</label>
-      <input type="number" id="totalMiles" required>
+      <input type="number" id="totalMiles">
     </div>
     <div class="form-group">
       <label for="productionCost">Production Cost ($/mile):</label>
-      <input type="number" id="productionCost" step="0.01" required>
+      <input type="number" id="productionCost" step="0.01">
     </div>
     <div class="form-group">
       <label for="ticketPrice">Average Ticket Price ($):</label>
-      <input type="number" id="ticketPrice" step="0.01" required>
+      <input type="number" id="ticketPrice" step="0.01">
     </div>
     <div class="form-group">
       <label for="totalPassengers">Total Passengers the Bus Can Carry:</label>
-      <input type="number" id="totalPassengers" required>
+      <input type="number" id="totalPassengers">
     </div>
     <button onclick="calculate()">Calculate</button>
+    <button id="clearButton" class="hidden" onclick="clearResults()">Clear</button>
     <div class="results" id="results"></div>
+    <div class="button-group">
+      <button id="explanationButton" onclick="showExplanation()">Calculation Explanation</button>
+      <button id="closeExplanationButton" class="hidden" onclick="hideExplanation()">Close Explanation</button>
+    </div>
+    <div class="explanation" id="explanation">
+      <h2>Calculation Explanation</h2>
+      <p>The program performs several calculations to determine how many passengers are needed to cover costs and guarantees, as well as the load factor, which is the percentage of the bus capacity used.</p>
+      <p><strong>A. Cost Per Trip</strong><br>
+      First, the program calculates the total cost to operate the trip:<br>
+      Cost Per Trip = Total Miles per Trip × Production Cost</p>
+      <p><strong>B. Guarantee Per Trip</strong><br>
+      Next, it calculates the total guarantee amount for the trip:<br>
+      Guarantee Per Trip = Total Miles per Trip × Minimum Guarantee</p>
+      <p><strong>C. Required Passengers to Cover Costs</strong><br>
+      To find out how many passengers are needed to cover the production cost, the program uses:<br>
+      Required Passengers (Cost) = Cost Per Trip / Ticket Price</p>
+      <p><strong>D. Load Factor to Cover Costs</strong><br>
+      The load factor is then calculated to show the percentage of the bus's capacity that needs to be filled:<br>
+      Load Factor (Cost) = (Required Passengers (Cost) / Total Passengers) × 100</p>
+      <p><strong>E. Required Passengers to Cover Guarantee</strong><br>
+      Similarly, to find out how many passengers are needed to cover the guarantee amount, the program uses:<br>
+      Required Passengers (Guarantee) = Guarantee Per Trip / Ticket Price</p>
+      <p><strong>F. Load Factor to Cover Guarantee</strong><br>
+      The load factor for the guarantee is calculated as:<br>
+      Load Factor (Guarantee) = (Required Passengers (Guarantee) / Total Passengers) × 100</p>
+    </div>
   </div>
   <script>
     function calculate() {
@@ -47,24 +82,63 @@
       const ticketPrice = parseFloat(document.getElementById('ticketPrice').value);
       const totalPassengers = parseInt(document.getElementById('totalPassengers').value);
 
-      const costPerTrip = totalMiles * productionCost;
-      const guaranteePerTrip = totalMiles * mg;
+      let results = '<h2>Results</h2>';
 
-      const requiredPassengersCost = costPerTrip / ticketPrice;
-      const loadFactorCost = (requiredPassengersCost / totalPassengers) * 100;
+      if (!isNaN(totalMiles) && !isNaN(productionCost) && !isNaN(ticketPrice) && !isNaN(totalPassengers)) {
+        const costPerTrip = totalMiles * productionCost;
+        const requiredPassengersCost = costPerTrip / ticketPrice;
+        const loadFactorCost = (requiredPassengersCost / totalPassengers) * 100;
 
-      const requiredPassengersGuarantee = guaranteePerTrip / ticketPrice;
-      const loadFactorGuarantee = (requiredPassengersGuarantee / totalPassengers) * 100;
+        results += `
+          <p><strong>To Exceed Production Cost of ${productionCost.toFixed(2)}$ per mile</strong></p>
+          <p>Required Number of Passengers: ${requiredPassengersCost.toFixed(2)}</p>
+          <p>Load Factor: ${loadFactorCost.toFixed(2)}%</p>
+        `;
+      }
 
-      document.getElementById('results').innerHTML = `
-        <h2>Results</h2>
-        <p>To Exceed Production Cost:</p>
-        <p>Required Number of Passengers: ${requiredPassengersCost.toFixed(2)}</p>
-        <p>Load Factor: ${loadFactorCost.toFixed(2)}%</p>
-        <p>To Exceed Guarantee Amount:</p>
-        <p>Required Number of Passengers: ${requiredPassengersGuarantee.toFixed(2)}</p>
-        <p>Load Factor: ${loadFactorGuarantee.toFixed(2)}%</p>
-      `;
+      if (!isNaN(totalMiles) && !isNaN(mg) && !isNaN(ticketPrice) && !isNaN(totalPassengers)) {
+        const guaranteePerTrip = totalMiles * mg;
+        const requiredPassengersGuarantee = guaranteePerTrip / ticketPrice;
+        const loadFactorGuarantee = (requiredPassengersGuarantee / totalPassengers) * 100;
+
+        results += `
+          <p><strong>To Exceed Minimum Guarantee of ${mg.toFixed(2)}$ per mile</strong></p>
+          <p>Required Number of Passengers: ${requiredPassengersGuarantee.toFixed(2)}</p>
+          <p>Load Factor: ${loadFactorGuarantee.toFixed(2)}%</p>
+        `;
+      }
+
+      if (results === '<h2>Results</h2>') {
+        results = '<p>Please provide valid inputs to perform the calculations.</p>';
+      }
+
+      document.getElementById('results').innerHTML = results;
+      document.getElementById('clearButton').classList.remove('hidden');
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '';
+      document.getElementById('mg').value = '';
+      document.getElementById('totalMiles').value = '';
+      document.getElementById('productionCost').value = '';
+      document.getElementById('ticketPrice').value = '';
+      document.getElementById('totalPassengers').value = '';
+      document.getElementById('clearButton').classList.add('hidden');
+      document.getElementById('explanationButton').classList.remove('hidden');
+      document.getElementById('closeExplanationButton').classList.add('hidden');
+      document.getElementById('explanation').style.display = 'none';
+    }
+
+    function showExplanation() {
+      document.getElementById('explanation').style.display = 'block';
+      document.getElementById('closeExplanationButton').classList.remove('hidden');
+      document.getElementById('explanationButton').classList.add('hidden');
+    }
+
+    function hideExplanation() {
+      document.getElementById('explanation').style.display = 'none';
+      document.getElementById('closeExplanationButton').classList.add('hidden');
+      document.getElementById('explanationButton').classList.remove('hidden');
     }
   </script>
 </body>
